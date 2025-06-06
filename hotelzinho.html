@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pet Hotel Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .toast {
+            visibility: hidden; min-width: 250px; margin-left: -125px;
+            background-color: #333; color: #fff; text-align: center;
+            border-radius: 8px; padding: 16px; position: fixed;
+            z-index: 100; left: 50%; bottom: 30px; opacity: 0;
+            transition: opacity 0.5s, visibility 0.5s;
+        }
+        .toast.show { visibility: visible; opacity: 1; }
+        .modal {
+            display: none; position: fixed; z-index: 50;
+            left: 0; top: 0; width: 100%; height: 100%;
+            overflow: auto; background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fefefe; margin: 5% auto; padding: 24px;
+            border: 1px solid #888; width: 90%; max-width: 800px;
+            border-radius: 16px; position: relative;
+        }
+        .close-btn {
+            color: #aaa; position: absolute; top: 16px; right: 24px;
+            font-size: 28px; font-weight: bold; cursor: pointer;
+        }
+        .close-btn:hover, .close-btn:focus { color: black; }
+        .tab-btn {
+            padding: 0.75rem 1.5rem; font-weight: 600;
+            border-radius: 8px; cursor: pointer;
+            transition: all 0.3s ease;
+            border-bottom: 4px solid transparent;
+        }
+        .tab-btn.active {
+            color: #4f46e5; /* indigo-600 */
+            border-bottom-color: #4f46e5;
+            background-color: #eef2ff; /* indigo-50 */
+        }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        @media print {
+            body * { visibility: hidden; }
+            #contract-preview, #contract-preview * { visibility: visible; }
+            #contract-preview { position: absolute; left: 0; top: 0; width: 100%; }
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+        
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-bold text-indigo-600">🐾 Pet Hotel Manager</h1>
+            <p class="text-gray-500 mt-2">Organize e gerencie seus hóspedes e contratos!</p>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <div class="lg:col-span-1 bg-white p-6 rounded-2xl shadow-lg h-fit">
+                <h2 class="text-2xl font-bold mb-6 text-gray-700">Novo Hóspede</h2>
+                <form id="add-pet-form" class="space-y-4">
+                    <input type="text" id="petName" name="petName" placeholder="Nome do Pet" required class="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-indigo-500 focus:border-indigo-500">
+                    <input type="text" id="petBreed" name="petBreed" placeholder="Raça" class="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-indigo-500 focus:border-indigo-500">
+                    <input type="text" id="ownerName" name="ownerName" placeholder="Nome do Dono" required class="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-indigo-500 focus:border-indigo-500">
+                    <input type="text" id="ownerContact" name="ownerContact" placeholder="Contato do Dono" required class="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-indigo-500 focus:border-indigo-500">
+                    <div>
+                        <label for="checkIn" class="block text-sm font-medium text-gray-600">Data de Check-in</label>
+                        <input type="date" id="checkIn" name="checkIn" required class="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div>
+                        <label for="checkOut" class="block text-sm font-medium text-gray-600">Data de Check-out</label>
+                        <input type="date" id="checkOut" name="checkOut" required class="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <textarea id="specialCare" name="specialCare" rows="3" class="mt-1 block w-full bg-gray-50 border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-indigo-500 focus:border-indigo-500" placeholder="Cuidados Especiais (Alergias, medicação, etc.)"></textarea>
+                    <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-transform transform hover:scale-105 shadow-md">
+                        <i class="fas fa-paw mr-2"></i> Adicionar Hóspede
+                    </button>
+                </form>
+            </div>
+
+            <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-lg">
+                <div class="border-b border-gray-200 mb-4">
+                    <nav class="flex space-x-4" aria-label="Tabs">
+                        <button id="tab-current" class="tab-btn active">Hóspedes Atuais</button>
+                        <button id="tab-history" class="tab-btn">Histórico</button>
+                    </nav>
+                </div>
+                <div id="content-current" class="tab-content active">
+                    <div id="pet-list" class="space-y-4">
+                        <p id="no-pets-message" class="text-center text-gray-500 py-8">Nenhum hóspede no momento.</p>
+                    </div>
+                </div>
+                <div id="content-history" class="tab-content">
+                    <div id="history-list" class="space-y-4">
+                        <p id="no-history-message" class="text-center text-gray-500 py-8">Nenhum registro no histórico.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal para Gerador de Contrato -->
+    <div id="contract-modal" class="modal">
+        <div class="modal-content">
+            <span id="close-modal-btn" class="close-btn">&times;</span>
+            <div id="contract-form-view">
+                <h2 class="text-2xl font-bold mb-6 text-gray-700">Gerador de Contrato</h2>
+                <p class="mb-4 text-gray-600">Preencha os campos abaixo para gerar o contrato de prestação de serviços.</p>
+                <form id="contract-generator-form" class="space-y-4 text-sm">
+                    <fieldset class="border p-4 rounded-lg">
+                        <legend class="text-lg font-semibold px-2">Dados do Contratante (Tutor)</legend>
+                        <input type="hidden" id="contractPetId">
+                        <input type="text" id="contractOwnerName" placeholder="Nome do Tutor" required class="mt-1 block w-full bg-gray-50 border-gray-300 rounded-lg p-2">
+                        <input type="text" id="contractOwnerCpf" placeholder="CPF do Tutor" required class="mt-1 block w-full bg-gray-50 border-gray-300 rounded-lg p-2">
+                        <input type="text" id="contractOwnerRg" placeholder="RG do Tutor" required class="mt-1 block w-full bg-gray-50 border-gray-300 rounded-lg p-2">
+                        <input type="text" id="contractOwnerAddress" placeholder="Endereço Completo do Tutor" required class="mt-1 block w-full bg-gray-50 border-gray-300 rounded-lg p-2">
+                        <input type="text" id="contractOwnerContact" placeholder="Telefone/WhatsApp do Tutor" required class="mt-1 block w-full bg-gray-50 border-gray-300 rounded-lg p-2">
+                    </fieldset>
+                    <fieldset class="border p-4 rounded-lg">
+                        <legend class="text-lg font-semibold px-2">Dados do Animal</legend>
+                        <input type="text" id="contractPetName" placeholder="Nome do Cão" required class="mt-1 block w-full bg-gray-50 border-gray-300 rounded-lg p-2">
+                        <input type="text" id="contractPetBreed" placeholder="Raça" class="mt-1 block w-full bg-gray-50 border-gray-300 rounded-lg p-2">
+                        <input type="text" id="contractPetColor" placeholder="Cor/Pelagem" required class="mt-1 block w-full bg-gray-50 border-gray-300 rounded-lg p-2">
+                        <select id="contractPetSex" required class="mt-1 block w-full bg-gray-50 border-gray-300 rounded-lg p-2">
+                            <option value="Macho">Macho</option>
+                            <option value="Fêmea">Fêmea</option>
+                        </select>
+                        <input type="text" id="contractPetAge" placeholder="Idade" required class="mt-1 block w-full bg-gray-50 border-gray-300 rounded-lg p-2">
+                        <textarea id="contractPetObservations" placeholder="Particularidades/Observações" class="mt-1 block w-full bg-gray-50 border-gray-300 rounded-lg p-2"></textarea>
+                    </fieldset>
+                    <fieldset class="border p-4 rounded-lg">
+                        <legend class="text-lg font-semibold px-2">Valores e Período</legend>
+                        <input type="number" id="contractTotalValue" placeholder="Valor Total (R$)" required class="mt-1 block w-full bg-gray-50 border-gray-300 rounded-lg p-2">
+                        <input type="number" id="contractTotalDays" placeholder="Quantidade de Diárias" required class="mt-1 block w-full bg-gray-50 border-gray-300 rounded-lg p-2">
+                        <div class="grid grid-cols-2 gap-4 mt-1">
+                            <div>
+                                <label for="contractEntryTime">Horário de Entrada</label>
+                                <input type="time" id="contractEntryTime" required class="block w-full bg-gray-50 border-gray-300 rounded-lg p-2">
+                            </div>
+                            <div>
+                                <label for="contractExitTime">Horário de Saída</label>
+                                <input type="time" id="contractExitTime" required class="block w-full bg-gray-50 border-gray-300 rounded-lg p-2">
+                            </div>
+                        </div>
+                    </fieldset>
+                    <button type="submit" class="w-full bg-green-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"><i class="fas fa-file-signature mr-2"></i> Gerar Contrato</button>
+                </form>
+            </div>
+            <div id="contract-preview" class="hidden prose max-w-none"></div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script type="module">
+        // IMPORTANTE: Para que o site funcione online, as configurações do Firebase precisam ser preenchidas.
+        // Você precisará criar um projeto no Firebase (firebase.google.com) e colar suas chaves aqui.
+        // O processo de configuração do Firebase é um passo mais avançado, podemos ver isso depois se você quiser.
+        // Por enquanto, o site funcionará online, mas os dados não serão salvos entre as sessões.
+
+        const firebaseConfig = {
+            // Cole suas chaves de configuração do Firebase aqui
+            // Exemplo:
+            // apiKey: "AIzaSy...-...",
+            // authDomain: "seu-projeto.firebaseapp.com",
+            // projectId: "seu-projeto",
+            // storageBucket: "seu-projeto.appspot.com",
+            // messagingSenderId: "1234567890",
+            // appId: "1:1234567890:web:abcdef123456"
+        };
+        
+        // Se as chaves do Firebase não forem preenchidas, o app usará um modo "demo" sem salvar dados.
+        const useFirebase = firebaseConfig.apiKey && firebaseConfig.projectId;
+
+        // **Aviso**: As importações do Firebase só funcionarão se as chaves estiverem configuradas.
+        if (useFirebase) {
+            import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js").then(({ initializeApp }) => {
+                const app = initializeApp(firebaseConfig);
+                // Inicialize outros serviços do Firebase aqui se necessário
+                // Ex: getFirestore(app);
+            });
+        }
+        
+        // --- Referências de Elementos do DOM ---
+        const petForm = document.getElementById('add-pet-form');
+        const petListDiv = document.getElementById('pet-list');
+        const historyListDiv = document.getElementById('history-list');
+        const noPetsMessage = document.getElementById('no-pets-message');
+        const noHistoryMessage = document.getElementById('no-history-message');
+        const toast = document.getElementById('toast');
+        const tabCurrent = document.getElementById('tab-current');
+        const tabHistory = document.getElementById('tab-history');
+        const contentCurrent = document.getElementById('content-current');
+        const contentHistory = document.getElementById('content-history');
+        const contractModal = document.getElementById('contract-modal');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const contractFormView = document.getElementById('contract-form-view');
+        const contractGeneratorForm = document.getElementById('contract-generator-form');
+        const contractPreview = document.getElementById('contract-preview');
+
+        // --- Variáveis Locais para modo "demo" ---
+        let localPets = [];
+        let localHistory = [];
+        let petIdCounter = 1;
+
+        function showToast(message) {
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => { toast.classList.remove('show'); }, 3000);
+        }
+        
+        // --- Funções de Manipulação de Dados (Modo Demo) ---
+
+        function addPetLocal(petData) {
+            const newPet = { ...petData, id: petIdCounter++ };
+            localPets.push(newPet);
+            renderPetList(localPets);
+            showToast(`${petData.petName} foi adicionado com sucesso!`);
+            petForm.reset();
+        }
+
+        function checkOutPetLocal(id) {
+            const petIndex = localPets.findIndex(p => p.id === id);
+            if (petIndex === -1) return;
+
+            const [petToMove] = localPets.splice(petIndex, 1);
+            const historyRecord = { ...petToMove, checkedOutAt: new Date() };
+            localHistory.push(historyRecord);
+            
+            renderPetList(localPets);
+            renderHistoryList(localHistory);
+            showToast(`${petToMove.petName} movido para o histórico.`);
+        }
+
+        petForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const petData = {
+                petName: e.target.petName.value, petBreed: e.target.petBreed.value,
+                ownerName: e.target.ownerName.value, ownerContact: e.target.ownerContact.value,
+                checkIn: e.target.checkIn.value, checkOut: e.target.checkOut.value,
+                specialCare: e.target.specialCare.value, status: 'Hospedado'
+            };
+            addPetLocal(petData);
+        });
+        
+        function renderPetList(pets) {
+            petListDiv.innerHTML = '';
+            noPetsMessage.style.display = pets.length === 0 ? 'block' : 'none';
+            pets.sort((a, b) => new Date(b.checkIn) - new Date(a.checkIn));
+            pets.forEach(pet => {
+                const petCard = document.createElement('div');
+                petCard.className = 'bg-gray-50 p-5 rounded-xl shadow-md border border-gray-200';
+                const formattedCheckIn = new Date(pet.checkIn + 'T00:00:00').toLocaleDateString('pt-BR');
+                const formattedCheckOut = new Date(pet.checkOut + 'T00:00:00').toLocaleDateString('pt-BR');
+                petCard.innerHTML = `
+                    <div class="flex justify-between items-start flex-wrap gap-2">
+                        <div>
+                            <h3 class="text-xl font-bold text-indigo-700">${pet.petName} <span class="text-base font-normal text-gray-500">- ${pet.petBreed || 'SRD'}</span></h3>
+                            <p class="text-sm text-gray-600 mt-1"><i class="fas fa-user mr-2 text-gray-400"></i>${pet.ownerName}</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button data-id="${pet.id}" class="generate-contract-btn bg-green-500 text-white text-xs font-bold py-2 px-3 rounded-lg hover:bg-green-600 transition-colors no-print">
+                                <i class="fas fa-file-alt mr-1"></i> Contrato
+                            </button>
+                            <button data-id="${pet.id}" class="checkout-btn bg-red-500 text-white text-xs font-bold py-2 px-3 rounded-lg hover:bg-red-600 transition-colors no-print">
+                                <i class="fas fa-sign-out-alt mr-1"></i> Check-out
+                            </button>
+                        </div>
+                    </div>
+                    <div class="mt-4 border-t pt-4 text-sm">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                             <div class="bg-green-100 text-green-800 p-3 rounded-lg"><strong>Check-in:</strong> ${formattedCheckIn}</div>
+                             <div class="bg-orange-100 text-orange-800 p-3 rounded-lg"><strong>Check-out:</strong> ${formattedCheckOut}</div>
+                        </div>
+                         ${pet.specialCare ? `<div class="mt-3"><p class="font-semibold">Cuidados Especiais:</p><p class="text-gray-600 whitespace-pre-wrap">${pet.specialCare}</p></div>` : ''}
+                    </div>`;
+                petListDiv.appendChild(petCard);
+            });
+            document.querySelectorAll('.checkout-btn').forEach(b => b.addEventListener('click', () => checkOutPetLocal(parseInt(b.dataset.id))));
+            document.querySelectorAll('.generate-contract-btn').forEach(b => b.addEventListener('click', () => openContractModal(parseInt(b.dataset.id))));
+        }
+
+        function renderHistoryList(history) {
+            historyListDiv.innerHTML = '';
+            noHistoryMessage.style.display = history.length === 0 ? 'block' : 'none';
+            history.sort((a, b) => new Date(b.checkedOutAt) - new Date(a.checkedOutAt));
+            history.forEach(pet => {
+                const historyCard = document.createElement('div');
+                historyCard.className = 'bg-gray-50 p-5 rounded-xl shadow-sm border border-gray-200 opacity-80';
+                const formattedCheckIn = new Date(pet.checkIn + 'T00:00:00').toLocaleDateString('pt-BR');
+                const formattedCheckOut = new Date(pet.checkOut + 'T00:00:00').toLocaleDateString('pt-BR');
+                const formattedCheckedOutAt = new Date(pet.checkedOutAt).toLocaleString('pt-BR');
+                historyCard.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-center flex-wrap gap-2">
+                            <h3 class="text-lg font-bold text-gray-700">${pet.petName} <span class="text-base font-normal text-gray-500">- ${pet.petBreed || 'SRD'}</span></h3>
+                            <span class="text-xs font-semibold text-red-700 bg-red-100 px-2 py-1 rounded-full">CHECK-OUT: ${formattedCheckedOutAt}</span>
+                        </div>
+                        <p class="text-sm text-gray-600 mt-1"><i class="fas fa-user mr-2 text-gray-400"></i>Dono: ${pet.ownerName}</p>
+                    </div>
+                    <div class="mt-3 border-t pt-3 text-sm">
+                        <p><strong>Período da hospedagem:</strong> ${formattedCheckIn} a ${formattedCheckOut}</p>
+                        ${pet.specialCare ? `<p class="mt-2"><strong>Cuidados Especiais:</strong> ${pet.specialCare}</p>` : ''}
+                    </div>`;
+                historyListDiv.appendChild(historyCard);
+            });
+        }
+        
+        tabCurrent.addEventListener('click', () => {
+            contentCurrent.classList.add('active'); contentHistory.classList.remove('active');
+            tabCurrent.classList.add('active'); tabHistory.classList.remove('active');
+        });
+        tabHistory.addEventListener('click', () => {
+            contentHistory.classList.add('active'); contentCurrent.classList.remove('active');
+            tabHistory.classList.add('active'); tabCurrent.classList.remove('active');
+        });
+
+        closeModalBtn.onclick = () => {
+            contractModal.style.display = "none";
+            contractPreview.classList.add('hidden');
+            contractFormView.classList.remove('hidden');
+        };
+        window.onclick = (event) => {
+            if (event.target == contractModal) {
+                contractModal.style.display = "none";
+                contractPreview.classList.add('hidden');
+                contractFormView.classList.remove('hidden');
+            }
+        };
+
+        function openContractModal(petId) {
+            const pet = localPets.find(p => p.id === petId);
+            if (!pet) { showToast("Pet não encontrado!"); return; }
+            contractGeneratorForm.reset();
+            document.getElementById('contractPetId').value = pet.id;
+            document.getElementById('contractOwnerName').value = pet.ownerName || '';
+            document.getElementById('contractOwnerContact').value = pet.ownerContact || '';
+            document.getElementById('contractPetName').value = pet.petName || '';
+            document.getElementById('contractPetBreed').value = pet.petBreed || '';
+            document.getElementById('contractPetObservations').value = pet.specialCare || '';
+            contractModal.style.display = 'block';
+        }
+        
+        contractGeneratorForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const petId = parseInt(document.getElementById('contractPetId').value);
+            const pet = localPets.find(p => p.id === petId);
+            if (!pet) { showToast("Erro ao encontrar dados do pet."); return; }
+            const data = {
+                ownerName: document.getElementById('contractOwnerName').value, ownerCpf: document.getElementById('contractOwnerCpf').value,
+                ownerRg: document.getElementById('contractOwnerRg').value, ownerAddress: document.getElementById('contractOwnerAddress').value,
+                ownerContact: document.getElementById('contractOwnerContact').value, petName: document.getElementById('contractPetName').value,
+                petBreed: document.getElementById('contractPetBreed').value, petColor: document.getElementById('contractPetColor').value,
+                petSex: document.getElementById('contractPetSex').value, petAge: document.getElementById('contractPetAge').value,
+                petObservations: document.getElementById('contractPetObservations').value,
+                checkIn: new Date(pet.checkIn + 'T00:00:00').toLocaleDateString('pt-BR'),
+                checkOut: new Date(pet.checkOut + 'T00:00:00').toLocaleDateString('pt-BR'),
+                entryTime: document.getElementById('contractEntryTime').value, exitTime: document.getElementById('contractExitTime').value,
+                totalValue: parseFloat(document.getElementById('contractTotalValue').value).toFixed(2),
+                totalDays: document.getElementById('contractTotalDays').value,
+                currentDate: new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })
+            };
+            generateContractText(data);
+            contractFormView.classList.add('hidden');
+            contractPreview.classList.remove('hidden');
+        });
+
+        function generateContractText(data) {
+            const contractHTML = `
+                <div class="p-4 sm:p-6 md:p-8">
+                    <div class="no-print mb-6 flex justify-end gap-2">
+                        <button id="print-btn" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"><i class="fas fa-print mr-2"></i>Imprimir/Salvar PDF</button>
+                        <button id="back-to-form-btn" class="bg-gray-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-600 transition-colors"><i class="fas fa-edit mr-2"></i>Editar</button>
+                    </div>
+                    <h3 class="text-center font-bold text-lg mb-4">CONTRATO DE PRESTAÇÃO DE SERVIÇOS DE HOSPEDAGEM PET – HOTELZINHO PET DA LUISA</h3>
+                    <p class="text-xs"><strong>CONTRATANTE:</strong> Nome: ${data.ownerName}, CPF: ${data.ownerCpf}, RG: ${data.ownerRg}, Endereço: ${data.ownerAddress}, Telefone/WhatsApp: ${data.ownerContact}</p>
+                    <p class="text-xs"><strong>CONTRATADA:</strong> HOTELZINHO PET DA LUISA, situado no Condomínio Ville de Montagne, Brasília/DF, WhatsApp: +55 61 9243-7520, CPF da responsável: xxx.xxx.xxx-xx</p>
+                    <hr class="my-4">
+                    <div class="space-y-2 text-xs">
+                        <p><strong>CLÁUSULA 1 – DO OBJETO:</strong> 1.1. O presente contrato tem por objeto a prestação de serviços de hospedagem pet para o(s) cão(ães) descrito(s) abaixo...</p>
+                        <p><strong>CLÁUSULA 2 – IDENTIFICAÇÃO DO ANIMAL:</strong> Nome: ${data.petName}, Raça: ${data.petBreed}, Cor/Pelagem: ${data.petColor}, Sexo: ${data.petSex}, Idade: ${data.petAge}, Particularidades/Observações: ${data.petObservations}</p>
+                        <p><strong>CLÁUSULA 3 – PERÍODO E HORÁRIOS:</strong> 3.1. O(s) animal(is) será(ao) hospedado(s) do dia ${data.checkIn} até ${data.checkOut}, com os seguintes horários combinados: Entrada: ${data.entryTime}, Saída: ${data.exitTime}...</p>
+                        <p><strong>CLÁUSULA 4 – VALORES E FORMA DE PAGAMENTO:</strong> ...O total contratado é de R$ ${data.totalValue}, referente a ${data.totalDays} diárias...</p>
+                        <p><strong>CLÁUSULA 5 – DOS SERVIÇOS INCLUSOS:</strong> ...</p>
+                        <p><strong>CLÁUSULA 6 – DAS RESPONSABILIDADES:</strong> ...</p>
+                        <p><strong>CLÁUSULA 7 – CANCELAMENTOS E DESISTÊNCIAS:</strong> ...</p>
+                        <p><strong>CLÁUSULA 8 – CONSIDERAÇÕES FINAIS:</strong> ...</p>
+                    </div>
+                    <br><br><p class="text-center">Brasília/DF, ${data.currentDate}.</p><br><br>
+                    <div class="grid grid-cols-2 gap-8 text-center text-xs mt-8">
+                        <div><p class="border-t border-gray-400 pt-2"><strong>CONTRATANTE:</strong> ${data.ownerName}</p></div>
+                        <div><p class="border-t border-gray-400 pt-2"><strong>CONTRATADA:</strong> Luisa Resende Moreira</p></div>
+                    </div>
+                </div>`;
+            contractPreview.innerHTML = contractHTML;
+            document.getElementById('print-btn').addEventListener('click', () => window.print());
+            document.getElementById('back-to-form-btn').addEventListener('click', () => {
+                contractPreview.classList.add('hidden');
+                contractFormView.classList.remove('hidden');
+            });
+        }
+        
+        // Inicializa as listas vazias
+        renderPetList(localPets);
+        renderHistoryList(localHistory);
+    </script>
+</body>
+</html>
